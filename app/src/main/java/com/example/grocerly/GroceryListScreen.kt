@@ -11,23 +11,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.grocerly.data.GroceryItem
 import com.example.grocerly.ui.theme.GrocerlyTheme
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -38,59 +49,104 @@ fun GroceryListScreen(
     modifier: Modifier,
     viewModel: GroceryListViewModel,
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     GroceryListScreen(
         modifier = modifier,
+        state = state,
+        onReorderGroceryItem = { from, to ->
+            viewModel.onEvent(GroceryListEvent.ReorderGroceryItem(from, to))
+        },
+        onAddNewGroceryItemClick = { viewModel.onEvent(GroceryListEvent.ShowAddDialog) },
+        onUpdateNewGroceryItemName = { newName ->
+            viewModel.onEvent(GroceryListEvent.UpdateNewGroceryItemName(newName))
+        },
+        onUpdateNewGroceryItemQuantity = { newQuantity ->
+            viewModel.onEvent(GroceryListEvent.UpdateNewGroceryItemQuantity(newQuantity))
+        },
+        onSubmitNewGroceryItem = { viewModel.onEvent(GroceryListEvent.AddGroceryItem) },
+        onDismissAddGroceryItemDialog = {
+            viewModel.onEvent(GroceryListEvent.HideAddDialog)
+        },
     )
 }
 
 @Composable
 fun GroceryListScreen(
     modifier: Modifier = Modifier,
+    state: GroceryListState,
+    onReorderGroceryItem: (from: Int, to: Int) -> Unit,
+    onAddNewGroceryItemClick: () -> Unit,
+    onUpdateNewGroceryItemName: (newName: String) -> Unit,
+    onUpdateNewGroceryItemQuantity: (newQuantity: Int) -> Unit,
+    onSubmitNewGroceryItem: () -> Unit,
+    onDismissAddGroceryItemDialog: () -> Unit,
 ) {
-    Scaffold { contentPadding ->
-        Column(
-            modifier = modifier.padding(contentPadding)
+    val hapticFeedback = LocalHapticFeedback.current
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState =
+        rememberReorderableLazyListState(lazyListState) { from, to ->
+            onReorderGroceryItem(from.index, to.index)
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+        }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = 20.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            state = lazyListState,
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val hapticFeedback = LocalHapticFeedback.current
-            var list by remember { mutableStateOf(List(100) { "Item $it" }) }
-            val lazyListState = rememberLazyListState()
-            val reorderableLazyListState =
-                rememberReorderableLazyListState(lazyListState) { from, to ->
-                    list = list.toMutableList().apply {
-                        add(to.index, removeAt(from.index))
-                    }
-
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = lazyListState,
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(list, key = { it }) {
-                    ReorderableItem(reorderableLazyListState, key = it) { isDragging ->
-                        GroceryListItem(
-                            modifier = Modifier.longPressDraggableHandle(
-                                onDragStarted = {
-                                    hapticFeedback.performHapticFeedback(
-                                        HapticFeedbackType.GestureThresholdActivate
-                                    )
-                                },
-                                onDragStopped = {
-                                    hapticFeedback.performHapticFeedback(
-                                        HapticFeedbackType.GestureEnd
-                                    )
-                                },
-                            ),
-                            isDragging = isDragging,
-                            groceryItem = it,
-                        )
-                    }
+            items(state.groceryItems, key = { it.id }) {
+                ReorderableItem(reorderableLazyListState, key = it.id) { isDragging ->
+                    GroceryListItem(
+                        modifier = Modifier.longPressDraggableHandle(
+                            onDragStarted = {
+                                hapticFeedback.performHapticFeedback(
+                                    HapticFeedbackType.GestureThresholdActivate
+                                )
+                            },
+                            onDragStopped = {
+                                hapticFeedback.performHapticFeedback(
+                                    HapticFeedbackType.GestureEnd
+                                )
+                            },
+                        ),
+                        isDragging = isDragging,
+                        groceryItem = it,
+                    )
                 }
             }
         }
+
+        Button(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            onClick = onAddNewGroceryItemClick,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add grocery item to list"
+            )
+        }
+    }
+
+    if (state.showAddGroceryItemDialog) {
+        AddGroceryItemDialog(
+            name = state.newGroceryItemName,
+            quantity = state.newGroceryItemQuantity,
+            onNameChange = onUpdateNewGroceryItemName,
+            onQuantityChange = onUpdateNewGroceryItemQuantity,
+            onSubmit = onSubmitNewGroceryItem,
+            onDismiss = onDismissAddGroceryItemDialog,
+        )
     }
 }
 
@@ -98,7 +154,7 @@ fun GroceryListScreen(
 fun GroceryListItem(
     modifier: Modifier = Modifier,
     isDragging: Boolean,
-    groceryItem: String,
+    groceryItem: GroceryItem,
 ) {
     val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
@@ -112,8 +168,8 @@ fun GroceryListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                groceryItem,
-                Modifier
+                text = "${groceryItem.name} | ${groceryItem.positionIndex}",
+                modifier = Modifier
                     .padding(horizontal = 8.dp),
                 fontSize = 20.sp,
             )
@@ -129,13 +185,86 @@ fun GroceryListItem(
     }
 }
 
+@Composable
+fun AddGroceryItemDialog(
+    modifier: Modifier = Modifier,
+    name: String,
+    quantity: Int,
+    onNameChange: (String) -> Unit,
+    onQuantityChange: (Int) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
-@Preview
+    Dialog(
+        onDismissRequest = onDismiss,
+    ) {
+        Card(modifier = modifier) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                TextField(
+                    value = name,
+                    onValueChange = onNameChange,
+                    label = { Text(stringResource(R.string.grocery_name)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                )
+
+                Text(stringResource(R.string.quantity, quantity), modifier = Modifier.padding(top = 16.dp))
+
+                Slider(
+                    value = quantity.toFloat(),
+                    onValueChange = { onQuantityChange(it.toInt()) },
+                    valueRange = 1f..10f,
+                    steps = 8,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    Button(
+                        onClick = onSubmit,
+                        enabled = name.isNotBlank(),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) { Text(stringResource(R.string.add)) }
+                }
+            }
+        }
+    }
+}
+
+
+@Preview(showBackground = true)
 @Composable
 fun GroceryListScreenPreview() {
     GrocerlyTheme {
         GroceryListScreen(
             modifier = Modifier.fillMaxSize(),
+            onReorderGroceryItem = { _, _ -> },
+            onAddNewGroceryItemClick = { },
+            onUpdateNewGroceryItemName = { },
+            onUpdateNewGroceryItemQuantity = { },
+            onSubmitNewGroceryItem = { },
+            onDismissAddGroceryItemDialog = { },
+            state = GroceryListState(
+                groceryItems = listOf(
+                    GroceryItem(id = 1L, name = "Apples", quantity = 5, positionIndex = 0),
+                    GroceryItem(id = 2L, name = "Bananas", quantity = 7, positionIndex = 1),
+                    GroceryItem(id = 3L, name = "Carrots", quantity = 3, positionIndex = 2),
+                    GroceryItem(id = 4L, name = "Bread", quantity = 2, positionIndex = 3),
+                )
+            ),
         )
     }
 }
