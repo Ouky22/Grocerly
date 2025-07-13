@@ -66,5 +66,8 @@ dependencies {
 
     // dagger hilt
     implementation(libs.hilt.android)
-    ksp("com.google.dagger:hilt-android-compiler:2.56.2")
+    ksp(libs.hilt.android.compiler)
+
+    // For LazyList with drag and drop
+    implementation(libs.reorderable)
 }
