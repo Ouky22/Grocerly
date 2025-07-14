@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +39,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -241,18 +243,29 @@ fun GroceryListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "${groceryItem.name} | ${groceryItem.positionIndex}",
-                modifier = Modifier
-                    .padding(horizontal = 8.dp),
-                fontSize = 20.sp,
-                textDecoration =
-                    if (groceryItem.checkedOff) TextDecoration.LineThrough
-                    else TextDecoration.None,
-                color = if (groceryItem.checkedOff)
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                else MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${groceryItem.quantity}x",
+                    modifier = Modifier.width(42.dp), // Adjust width as needed
+                    fontSize = 20.sp,
+                    color = if (groceryItem.checkedOff)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = groceryItem.name,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration =
+                        if (groceryItem.checkedOff) TextDecoration.LineThrough
+                        else TextDecoration.None,
+                    color = if (groceryItem.checkedOff)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
 
             if (inEditMode) {
                 IconButton(
