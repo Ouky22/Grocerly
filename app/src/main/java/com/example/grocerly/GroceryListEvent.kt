@@ -17,4 +17,6 @@ sealed class GroceryListEvent {
     object AddGroceryItem : GroceryListEvent()
 
     data class DeleteGroceryItem(val groceryItem: GroceryItem) : GroceryListEvent()
+
+    data class CheckOffGroceryItem(val groceryItem: GroceryItem) : GroceryListEvent()
 }

@@ -10,4 +10,5 @@ data class GroceryItem(
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "quantity") val quantity: Int,
     @ColumnInfo(name = "positionIndex") val positionIndex: Int,
+    @ColumnInfo(name = "checkedOff") val checkedOff: Boolean = false,
 )

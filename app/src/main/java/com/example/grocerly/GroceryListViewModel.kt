@@ -71,6 +71,9 @@ class GroceryListViewModel @Inject constructor(
 
             is GroceryListEvent.DeleteGroceryItem
                 -> deleteGroceryItemFromCurrentList(event)
+
+            is GroceryListEvent.CheckOffGroceryItem
+                -> toggleGroceryItemCheckedOfStatus(event)
         }
     }
 
@@ -128,6 +131,15 @@ class GroceryListViewModel @Inject constructor(
                 newGroceryItemName = "",
                 newGroceryItemQuantity = 1,
                 showAddGroceryItemDialog = false,
+            )
+        }
+    }
+
+    private fun toggleGroceryItemCheckedOfStatus(event: GroceryListEvent.CheckOffGroceryItem) {
+        viewModelScope.launch {
+            val item = event.groceryItem
+            groceryItemRepository.insertOrUpdateGroceryItem(
+                item.copy(checkedOff = !item.checkedOff)
             )
         }
     }
