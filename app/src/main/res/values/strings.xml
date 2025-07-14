@@ -5,4 +5,5 @@
     <string name="cancel">Cancel</string>
     <string name="add">Add</string>
     <string name="delete_item">Delete item</string>
+    <string name="add_grocery_item_to_list">Add grocery item to list</string>
 </resources>

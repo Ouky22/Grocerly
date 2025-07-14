@@ -146,7 +146,7 @@ fun GroceryListScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add grocery item to list"
+                contentDescription = stringResource(R.string.add_grocery_item_to_list)
             )
         }
     }
