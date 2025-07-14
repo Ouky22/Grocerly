@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -76,7 +79,8 @@ fun GroceryListScreen(
         },
         onCheckOffGroceryItem = { groceryItem ->
             viewModel.onEvent(GroceryListEvent.CheckOffGroceryItem(groceryItem))
-        }
+        },
+        onToggleEditingMode = { viewModel.onEvent(GroceryListEvent.ToggleEditMode) }
     )
 }
 
@@ -92,13 +96,16 @@ fun GroceryListScreen(
     onDismissAddGroceryItemDialog: () -> Unit,
     onGroceryItemDeleteClick: (groceryItem: GroceryItem) -> Unit,
     onCheckOffGroceryItem: (groceryItem: GroceryItem) -> Unit,
+    onToggleEditingMode: () -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState =
         rememberReorderableLazyListState(lazyListState) { from, to ->
-            onReorderGroceryItem(from.index, to.index)
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+            if (state.inEditMode) {
+                onReorderGroceryItem(from.index, to.index)
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+            }
         }
 
     Column(
@@ -112,43 +119,41 @@ fun GroceryListScreen(
             modifier = Modifier.weight(1f),
             state = lazyListState,
             contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.groceryItems, key = { it.id }) {
                 ReorderableItem(reorderableLazyListState, key = it.id) { isDragging ->
                     GroceryListItem(
-                        modifier = Modifier.longPressDraggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(
-                                    HapticFeedbackType.GestureThresholdActivate
-                                )
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(
-                                    HapticFeedbackType.GestureEnd
-                                )
-                            },
-                        ),
+                        modifier = if (state.inEditMode) {
+                            Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    hapticFeedback.performHapticFeedback(
+                                        HapticFeedbackType.GestureThresholdActivate
+                                    )
+                                },
+                                onDragStopped = {
+                                    hapticFeedback.performHapticFeedback(
+                                        HapticFeedbackType.GestureEnd
+                                    )
+                                },
+                            )
+                        } else {
+                            Modifier // No drag handle when not in edit mode
+                        },
                         isDragging = isDragging,
                         groceryItem = it,
                         onClick = onCheckOffGroceryItem,
                         onDeleteClick = onGroceryItemDeleteClick,
+                        inEditMode = state.inEditMode,
                     )
                 }
             }
         }
 
-        Button(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            onClick = onAddNewGroceryItemClick,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.add_grocery_item_to_list)
-            )
-        }
+        BottomButtonRow(
+            onAddNewGroceryItemClick = onAddNewGroceryItemClick,
+            onToggleEditingMode = onToggleEditingMode,
+            inEditingMode = state.inEditMode,
+        )
     }
 
     if (state.showAddGroceryItemDialog) {
@@ -164,23 +169,75 @@ fun GroceryListScreen(
 }
 
 @Composable
+fun BottomButtonRow(
+    modifier: Modifier = Modifier,
+    onAddNewGroceryItemClick: () -> Unit,
+    onToggleEditingMode: () -> Unit,
+    inEditingMode: Boolean,
+) {
+    Row(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (!inEditingMode) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
+        Button(
+            modifier = Modifier.weight(1f),
+            onClick = onToggleEditingMode,
+        ) {
+            Icon(
+                imageVector = if (inEditingMode) Icons.Default.Lock else Icons.Default.Edit,
+                contentDescription = "Enable or disable editing mode"
+            )
+        }
+
+        if (!inEditingMode) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
+        if (inEditingMode) {
+            Button(
+                modifier = Modifier
+                    .weight(2f)
+                    .padding(horizontal = 16.dp),
+                onClick = onAddNewGroceryItemClick,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.add_grocery_item_to_list)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun GroceryListItem(
     modifier: Modifier = Modifier,
     isDragging: Boolean,
     groceryItem: GroceryItem,
     onClick: (GroceryItem) -> Unit,
     onDeleteClick: (GroceryItem) -> Unit,
+    inEditMode: Boolean,
 ) {
     val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
     Surface(
         modifier = modifier
-            .padding(horizontal = 8.dp)
             .fillMaxWidth()
-            .clickable { onClick(groceryItem) },
+            .clickable {
+                if (!inEditMode) {
+                    onClick(groceryItem)
+                }
+            },
         shadowElevation = elevation,
     ) {
         Row(
+            modifier = Modifier.padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -196,13 +253,16 @@ fun GroceryListItem(
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 else MaterialTheme.colorScheme.onSurface
             )
-            IconButton(
-                onClick = { onDeleteClick(groceryItem) },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.delete_item)
-                )
+
+            if (inEditMode) {
+                IconButton(
+                    onClick = { onDeleteClick(groceryItem) },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete_item)
+                    )
+                }
             }
         }
     }
@@ -290,6 +350,7 @@ fun GroceryListScreenPreview() {
             onDismissAddGroceryItemDialog = { },
             onGroceryItemDeleteClick = {},
             onCheckOffGroceryItem = {},
+            onToggleEditingMode = {},
             state = GroceryListState(
                 groceryItems = listOf(
                     GroceryItem(id = 1L, name = "Apples", quantity = 5, positionIndex = 0),

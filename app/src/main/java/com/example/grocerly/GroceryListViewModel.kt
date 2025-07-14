@@ -74,7 +74,14 @@ class GroceryListViewModel @Inject constructor(
 
             is GroceryListEvent.CheckOffGroceryItem
                 -> toggleGroceryItemCheckedOfStatus(event)
+
+            is GroceryListEvent.ToggleEditMode
+                -> toggleEditMode()
         }
+    }
+
+    private fun toggleEditMode() {
+        _state.value = _state.value.copy(inEditMode = !_state.value.inEditMode)
     }
 
     private fun deleteGroceryItemFromCurrentList(event: GroceryListEvent.DeleteGroceryItem) {

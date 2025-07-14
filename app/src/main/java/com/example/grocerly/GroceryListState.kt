@@ -7,4 +7,5 @@ data class GroceryListState(
     val showAddGroceryItemDialog: Boolean = false,
     val newGroceryItemName: String = "",
     val newGroceryItemQuantity: Int = 1,
+    val inEditMode: Boolean = true,
 )
