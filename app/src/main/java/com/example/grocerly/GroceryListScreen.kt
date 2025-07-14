@@ -239,6 +239,7 @@ fun AddGroceryItemDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
+                        .padding(bottom = 16.dp)
                 )
 
                 Text(
@@ -251,12 +252,16 @@ fun AddGroceryItemDialog(
                     onValueChange = { onQuantityChange(it.toInt()) },
                     valueRange = 1f..10f,
                     steps = 8,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 )
 
                 Row(
-                    modifier = Modifier.padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Button(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                     Button(
