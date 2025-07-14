@@ -70,4 +70,10 @@ dependencies {
 
     // For LazyList with drag and drop
     implementation(libs.reorderable)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    testImplementation(libs.androidx.room.testing)
 }
