@@ -1,4 +1,6 @@
-package com.example.grocerly.data
+package com.example.grocerly
+
+import com.example.grocerly.data.GroceryItem
 
 fun createGroceryItem(
     id: Long = 0L,
