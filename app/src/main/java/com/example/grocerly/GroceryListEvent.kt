@@ -1,5 +1,7 @@
 package com.example.grocerly
 
+import com.example.grocerly.data.GroceryItem
+
 sealed class GroceryListEvent {
 
     data class ReorderGroceryItem(val from: Int, val to: Int) : GroceryListEvent()
@@ -13,4 +15,6 @@ sealed class GroceryListEvent {
     object HideAddDialog : GroceryListEvent()
 
     object AddGroceryItem : GroceryListEvent()
+
+    data class DeleteGroceryItem(val groceryItem: GroceryItem) : GroceryListEvent()
 }

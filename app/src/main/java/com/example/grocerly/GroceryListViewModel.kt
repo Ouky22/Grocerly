@@ -68,6 +68,15 @@ class GroceryListViewModel @Inject constructor(
 
             is GroceryListEvent.AddGroceryItem
                 -> addGroceryToCurrentList()
+
+            is GroceryListEvent.DeleteGroceryItem
+                -> deleteGroceryItemFromCurrentList(event)
+        }
+    }
+
+    private fun deleteGroceryItemFromCurrentList(event: GroceryListEvent.DeleteGroceryItem) {
+        viewModelScope.launch {
+            groceryItemRepository.deleteGroceryItem(event.groceryItem)
         }
     }
 

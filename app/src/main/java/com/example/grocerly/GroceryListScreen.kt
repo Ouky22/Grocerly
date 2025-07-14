@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -31,7 +32,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,6 +68,9 @@ fun GroceryListScreen(
         onDismissAddGroceryItemDialog = {
             viewModel.onEvent(GroceryListEvent.HideAddDialog)
         },
+        onGroceryItemDeleteClick = { groceryItem ->
+            viewModel.onEvent(GroceryListEvent.DeleteGroceryItem(groceryItem))
+        }
     )
 }
 
@@ -81,6 +84,7 @@ fun GroceryListScreen(
     onUpdateNewGroceryItemQuantity: (newQuantity: Int) -> Unit,
     onSubmitNewGroceryItem: () -> Unit,
     onDismissAddGroceryItemDialog: () -> Unit,
+    onGroceryItemDeleteClick: (groceryItem: GroceryItem) -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
@@ -120,6 +124,7 @@ fun GroceryListScreen(
                         ),
                         isDragging = isDragging,
                         groceryItem = it,
+                        onDeleteClick = onGroceryItemDeleteClick,
                     )
                 }
             }
@@ -155,6 +160,7 @@ fun GroceryListItem(
     modifier: Modifier = Modifier,
     isDragging: Boolean,
     groceryItem: GroceryItem,
+    onDeleteClick: (GroceryItem) -> Unit,
 ) {
     val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
@@ -174,11 +180,11 @@ fun GroceryListItem(
                 fontSize = 20.sp,
             )
             IconButton(
-                onClick = {},
+                onClick = { onDeleteClick(groceryItem) },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.rounded_drag_handle_24),
-                    contentDescription = "Reorder"
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete_item)
                 )
             }
         }
@@ -218,7 +224,10 @@ fun AddGroceryItemDialog(
                         .focusRequester(focusRequester)
                 )
 
-                Text(stringResource(R.string.quantity, quantity), modifier = Modifier.padding(top = 16.dp))
+                Text(
+                    stringResource(R.string.quantity, quantity),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
 
                 Slider(
                     value = quantity.toFloat(),
@@ -257,6 +266,7 @@ fun GroceryListScreenPreview() {
             onUpdateNewGroceryItemQuantity = { },
             onSubmitNewGroceryItem = { },
             onDismissAddGroceryItemDialog = { },
+            onGroceryItemDeleteClick = {},
             state = GroceryListState(
                 groceryItems = listOf(
                     GroceryItem(id = 1L, name = "Apples", quantity = 5, positionIndex = 0),

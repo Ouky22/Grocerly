@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface GroceryItemDao {
     @Query("SELECT * from groceryItem")
-    fun getAll(): Flow<List<GroceryItem>>
+    fun getAllAsFlow(): Flow<List<GroceryItem>>
+
+    @Query("SELECT * from groceryItem")
+    suspend fun getAll(): List<GroceryItem>
 
     @Upsert
     suspend fun insertOrUpdate(vararg groceryItems: GroceryItem)
